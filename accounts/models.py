@@ -7,6 +7,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from company.models import Department, Level
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **kwargs):
@@ -78,3 +80,12 @@ class User(AbstractEmailUser):
 
     def create_activation_code(self):
         self.activation_code = str(uuid.uuid4())
+
+
+class Profile(models.Model):
+    image = models.ImageField(upload_to="accounts")
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True,
+                                   related_name="profiles")
+    level = models.ForeignKey(Level, on_delete=models.SET_NULL, null=True)
+    salary = models.PositiveSmallIntegerField()
+    user = models.OneToOneField(User, on_delete=models.CASCADE)

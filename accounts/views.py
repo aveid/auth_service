@@ -1,10 +1,12 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login
 from django.shortcuts import render
 from django.views import View
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import RegisterSerializer
+from rest_framework.permissions import IsAuthenticated
+from .serializers import RegisterSerializer, LoginSerializer, LoginTokenSerializer
 
 
 class RegisterUserAPIView(APIView):
@@ -19,6 +21,16 @@ class RegisterUserAPIView(APIView):
 User = get_user_model()
 
 
+class AllUsersAPIView(APIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def get(self, request):
+        print(request.user)
+        users = User.objects.all()
+        serializer = RegisterSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class ActivateAccountView(View):
 
     def get(self, request, activation_code):
@@ -27,3 +39,32 @@ class ActivateAccountView(View):
         user.activation_code = ""
         user.save()
         return render(request, "success.html", locals())
+
+
+class UserLoginAPIView(APIView):
+    def post(self, request):
+        print(request.data)
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        login(request, user)
+        return Response({
+            "login": "success"
+        }, status=status.HTTP_200_OK)
+
+
+class UserTokenLoginAPIView(APIView):
+    def post(self, request):
+        serializer = LoginTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserTokenLogoutAPIView(APIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def post(self, request):
+        token = Token.objects.get(user=request.user)
+        token.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

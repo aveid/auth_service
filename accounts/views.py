@@ -5,9 +5,16 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from .serializers import RegisterSerializer, LoginSerializer, LoginTokenSerializer
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework import generics
 
+from company.models import Level
+from .models import Profile
+from .serializers import (RegisterSerializer, LoginSerializer,
+                          LoginTokenSerializer)
+from company.serializers import ProfileSerializer
+
+TRAINEE_CONSTANT = "trainee"
 
 class RegisterUserAPIView(APIView):
     def post(self, request):
@@ -38,6 +45,8 @@ class ActivateAccountView(View):
         user.is_active = True
         user.activation_code = ""
         user.save()
+        level_trainee = Level.objects.get(name=TRAINEE_CONSTANT)
+        Profile.objects.create(user=user, level=level_trainee, salary=0)
         return render(request, "success.html", locals())
 
 
@@ -68,3 +77,11 @@ class UserTokenLogoutAPIView(APIView):
         token = Token.objects.get(user=request.user)
         token.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProfileEditAPIView(generics.UpdateAPIView):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAdminUser,
+                          ]
+

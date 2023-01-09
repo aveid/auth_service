@@ -83,9 +83,10 @@ class User(AbstractEmailUser):
 
 
 class Profile(models.Model):
-    image = models.ImageField(upload_to="accounts")
+    image = models.ImageField(upload_to="accounts", null=True)
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True,
                                    related_name="profiles")
     level = models.ForeignKey(Level, on_delete=models.SET_NULL, null=True)
     salary = models.PositiveSmallIntegerField()
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+

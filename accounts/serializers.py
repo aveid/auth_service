@@ -79,3 +79,4 @@ class LoginTokenSerializer(serializers.Serializer):
         return {
             "token": token
         }
+
